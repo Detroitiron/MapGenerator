@@ -10,6 +10,8 @@ edition = "2018"
 noise = "0.7"
 image = "0.23"
 clap = "2.33"
+[profile.release]
+opt-level = 3
 
 [dependencies.rand]
 version = "0.8"

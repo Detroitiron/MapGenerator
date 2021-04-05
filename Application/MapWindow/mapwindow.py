@@ -1,12 +1,12 @@
 # This Python file uses the following encoding: utf-8
 import sys
 import os
-import threading
-from PySide6.QtCore import QEvent, Qt
-from PySide6.QtGui import QIntValidator, QDoubleValidator
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIntValidator, QDoubleValidator, QImage, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QHBoxLayout, QVBoxLayout, \
-    QLabel, QPushButton, QLineEdit, QWidget
-from PySide6.QtGui import QPixmap, QResizeEvent
+    QLabel, QPushButton, QLineEdit, QWidget, QMessageBox, QFileDialog
+from PySide6.QtGui import QPixmap
+
 
 class LabeledLineEdit(QHBoxLayout):
     def __init__(self, label, init_string):
@@ -25,7 +25,7 @@ class MapWindow(QMainWindow):
         self.view = QGraphicsView()
         self.scene = QGraphicsScene()
         self.pixMap = QPixmap("altitude.png")
-        self.scene.addPixmap(self.pixMap)
+        self.imItem = self.scene.addPixmap(self.pixMap)
         self.view.setScene(self.scene)
         self.layoutView = QHBoxLayout()
         self.layoutView.addWidget(self.view)
@@ -54,10 +54,19 @@ class MapWindow(QMainWindow):
         self.layoutControls.addLayout(self.seedLabel)
         self.layoutControls.addLayout(self.sizeLayout)
         self.layoutControls.addLayout(self.octaveLayout)
+        self.buttonLayout = QHBoxLayout()
         self.submitButton = QPushButton("Submit")
-        self.submitButton.clicked.connect(self.generateMap())
-        self.layoutControls.addWidget(self.submitButton)
+        self.saveIcon = QIcon("save.png")
+        self.saveButton = QPushButton("Save")
+        self.saveButton.setIcon(self.saveIcon)
+        self.saveButton.clicked.connect(self.savePixmap)
+        self.submitButton.clicked.connect(self.generateMap)
+        self.buttonLayout.addWidget(self.submitButton)
+        self.buttonLayout.addWidget(self.saveButton)
+        self.layoutControls.addLayout(self.buttonLayout)
         self.layoutView.addLayout(self.layoutControls)
+        self.layoutView.setStretchFactor(self.view, 4)
+        self.layoutView.setStretchFactor(self.layoutControls, 1)
         self.widget = QWidget()
         self.widget.setLayout(self.layoutView)
         self.setCentralWidget(self.widget)
@@ -68,20 +77,28 @@ class MapWindow(QMainWindow):
         height = self.heightLabel.text()
         persistence = self.persistenceLabel.text()
         lacunarity = self.lacunarityLabel.text()
-        run = os.system(f'.\\worldGenerator -s {seed} -w {width} -h {height} -p {persistence} -l {lacunarity}')
+        run = os.system(f'.\\worldGenerator -s "{seed}" -w {width} -h {height} -p {persistence} -l {lacunarity}')
+        print(run)
         if run == 0:
-            self.pixMap.load("altitude.png")
+            image = QImage("altitude.png")
+            if image.isNull():
+                QMessageBox.information(self, "Image Viewer", "Cannot load 'altitude.png'")
+
+            self.imItem.setPixmap(QPixmap("altitude.png"))
+            print("file loaded")
         else:
             print(f'Error code {run} encountered.')
 
     def resizePixmap(self):
-        size = self.scene.size()
-        print(size)
+        size = self.view.size()
         self.pixMap.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
     def eventResize(self, event):
         self.resizePixmap()
 
+    def savePixmap(self):
+        fileName = QFileDialog.getSaveFileName(self, u"Save Image", os.getcwd(), u"Png Files (*.png)")
+        self.pixMap.save(fileName[0])
 
 if __name__ == "__main__":
     os.system(f'.\\worldGenerator')

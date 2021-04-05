@@ -49,9 +49,17 @@ fn main() {
     let seed = matches.value_of("seed");
     let s = match seed {
         None => u32::MIN,
-        Some(s2) => match s2.parse::<u32>() {
-            Ok(n) => n,
-            Err(_) => u32::MIN,
+        Some(s2) => {
+            let mut sum :u32 = 0;
+            let mut length = s2.len();
+            if length > 20 {
+                length = 20;
+            }
+            let tmp = &s2[0..length];
+            for c in tmp.chars() {
+                sum += c as u32;
+            }
+            sum
         },
     };
     let map_width = matches.value_of("map_width");
